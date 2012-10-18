@@ -34,14 +34,11 @@ const int RUN_STATE_TEST                = 1018;
 const int MODE_BUTTON_DATA    = 3;
 const int MODE_BUTTON_PWR     = 2;
 const int STATUS_LED          = 10;
-const int ID12_RESET          = 7;
-const int ID12_RX             = 8;
-const int ID12_TX             = 9;
 const int RNXV_RX             = 4;
 const int RNXV_TX             = 5;
 
 //Declare ID-12 RFID reader and buffer
-SoftwareSerial id12SoftSerial(ID12_RX, ID12_TX);
+//SoftwareSerial id12SoftSerial(ID12_RX, ID12_TX);
 char tagString[13];
 int index;
 boolean reading;
@@ -83,9 +80,7 @@ void loop()
       //Energize and set I/O mode for all pins
       Serial.println("BOOT_PINS");
       Serial.println(freeMemory());
-      
-      pinMode(ID12_RESET, OUTPUT);
-      digitalWrite(ID12_RESET, HIGH);
+
       
       pinMode(STATUS_LED, OUTPUT);
       digitalWrite(STATUS_LED, LOW);
@@ -268,8 +263,9 @@ void loop()
       Serial.println("settings saved");
       WiFly.SendCommand("reboot","Ver", bufBody, BODY_BUFFER_SIZE);
       delay(3000);
-      Serial.println("reboot called");
+      Serial.println("reboot called");      
       runState = RUN_STATE_CONFIG_RNXV;
+      digitalWrite( STATUS_LED, HIGH );
       Serial.println(freeMemory());
       break;
        
@@ -283,10 +279,13 @@ void loop()
       //When the iOS app is done, it will send 'RNXVREBOOT' over the socket connection
       //When we hear the reboot code come over, go to BOOT_PINS
       //Serial.println("CONFIG_RNXV");
-      delay(10);
       //Serial.println(freeMemory());
       
+      //Checking ot see if ARD has crashed here somehow
+      //counter++;
+      //Serial.print(counter);
       
+      /*
       //Blink the LED to show we're in config mode
       t = millis() % 2000;
       if(t>1000)
@@ -297,7 +296,7 @@ void loop()
       {
         digitalWrite( STATUS_LED, LOW );
       }
-      
+      */
       
       //Check the state of the mode button
       //if pressed while in config mode, reboot
@@ -305,26 +304,21 @@ void loop()
       if(digitalRead(MODE_BUTTON_DATA) == LOW)
       {
         runState = RUN_STATE_CONFIG_BTN_DOWN;
+        digitalWrite( STATUS_LED, LOW );
       }
       */
       
-      //Testing: un-comment to send commands via serialMonitor
-      /*
-      if(Serial.available()) { // Outgoing data
-        //WiFly.write( (chOut = Serial.read()) );
-        //Serial.write (chOut);
-        WiFly.write( Serial.read() );
-      }
-      */
       
       
       //Check the RNXV buffer for any new bytes that have arrived over the socket connection
       //Push them into the SPIInputString input buffer
+      
       while(WiFly.available() > 0)
       {
         char s = WiFly.read();
         SPIInputString.concat(s);
-        Serial.print(s);
+        delay(10);
+        //Serial.print(s);
         //Serial.write(WiFly.read());
         
       }
@@ -337,26 +331,32 @@ void loop()
       }
       */
       
+      
       //Scan the RNXV input buffer for char command sequences from the iOS config app
-      if(SPIInputString.indexOf("CNX") != -1)
+      if(SPIInputString.length() > 2 && SPIInputString.indexOf("CNX") != -1)
       {
+        Serial.println("CNX received");
         WiFly.flush();
+        delay(100);
         SPIInputString = " ";
         //This iOS device is requesting a connection check
         //respond with 'CNX'
+        
         WiFly.write("CNX");
         delay(100);
       }
-      else if(SPIInputString.indexOf("IDFY") != -1)
+      else if(SPIInputString.length() > 2 && SPIInputString.indexOf("IDFY") != -1)
       {
+        Serial.println("IDFY received");
         WiFly.flush();
+        delay(100);
         SPIInputString = " ";
         //This iOS device is requesting a that this handle identify itself
         //switch to identify state
         runState = RUN_STATE_CONFIG_IDENTIFY;
         delay(100);
       }
-      else if(SPIInputString.indexOf("ECONF") != -1)
+      else if(SPIInputString.length() > 2 && SPIInputString.indexOf("ECONF") != -1)
       {
         if((SPIInputString.indexOf("BCONF") != -1))
         {
@@ -431,10 +431,12 @@ void loop()
           WiFly.SendCommand("save ap",">", bufBody, BODY_BUFFER_SIZE);
           delay(1000);
           
-          
-          //runState = RUN_STATE_BOOT_PINS;
+          digitalWrite( STATUS_LED, LOW );
+          runState = RUN_STATE_BOOT_PINS;
         }
       }
+      
+      delay(10);
       
       break;
     
@@ -465,8 +467,7 @@ void loop()
       digitalWrite(STATUS_LED, HIGH);
       delay(50);
       digitalWrite(STATUS_LED, LOW);
-      delay(100);
-      digitalWrite(STATUS_LED, HIGH);
+      delay(10);
       
       runState = RUN_STATE_CONFIG_RNXV;
       
@@ -518,27 +519,6 @@ void loop()
         btn_counter=0;
         runState = RUN_STATE_BTN_DOWN;
       }
-      
-      //Check ID-12 for incoming serial data
-      //char tagString[13];
-      index = 0;
-      reading = false;
-      while(id12SoftSerial.available()){
-        int readByte = id12SoftSerial.read(); //read next available byte
-        Serial.write(readByte);
-        //Serial.print('x');
-        if(readByte == 2) reading = true; //begining of tag
-        if(readByte == 3) reading = false; //end of tag
-    
-        if(reading && readByte != 2 && readByte != 10 && readByte != 13){
-          //store the tag
-          tagString[index] = readByte;
-          index ++;
-        }
-      }
-      checkTag(tagString); //Check if it is a match
-      clearTag(tagString); //Clear the char of all value
-      //resetReader(); //reset the RFID reader
       
       //Wait guard time before looping
       delay(10);
@@ -653,8 +633,6 @@ void loop()
       delay(500);
       
       break;
-   
-boolean suc;
 
     case RUN_STATE_POUR_END:
       ////////////////////////////
@@ -676,6 +654,8 @@ boolean suc;
       
       WiFly.flush();
       delay(100);
+      
+      boolean suc;
       //Open socket to host stored in RNXV on port 80
       //suc = WiFly.SendCommand("open 173.201.58.131 80","OPEN", bufBody, BODY_BUFFER_SIZE);
       //WiFly.SendCommand("open","OPEN", bufBody, BODY_BUFFER_SIZE);
@@ -729,33 +709,5 @@ boolean suc;
      
   }
   
-}
-
-void checkTag(char tag[]){
-///////////////////////////////////
-//Check the read tag against known tags
-///////////////////////////////////
-
-    //Serial.println(tag); //read out any unknown tag
-}
-
-
-void resetReader(){
-///////////////////////////////////
-//Reset the RFID reader to read again.
-///////////////////////////////////
-  digitalWrite(7, LOW);
-  digitalWrite(7, HIGH);
-  delay(150);
-}
-
-void clearTag(char one[]){
-///////////////////////////////////
-//clear the char array by filling with null - ASCII 0
-//Will think same tag has been read otherwise
-///////////////////////////////////
-  for(int i = 0; i < strlen(one); i++){
-    one[i] = 0;
-  }
 }
 
