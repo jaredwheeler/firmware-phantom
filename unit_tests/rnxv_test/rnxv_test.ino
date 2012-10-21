@@ -120,6 +120,8 @@ void loop()
       WiFly.begin();
       Serial.println("WiFly UP");
       
+      delay(1000);
+      
       WiFly.setRemotePort(80);
       
       
@@ -130,7 +132,7 @@ void loop()
       WiFly.SendCommand("reboot","Ver", bufBody, BODY_BUFFER_SIZE);
       delay(3000);
       WiFly.SendCommand("join",">", bufBody, BODY_BUFFER_SIZE);
-      delay(1000);
+      delay(3000);
       
       Serial.println("getDeviceStatus");
       Serial.println(freeMemory());
