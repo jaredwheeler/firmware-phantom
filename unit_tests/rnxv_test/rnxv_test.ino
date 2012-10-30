@@ -127,7 +127,7 @@ void loop()
       
       WiFly.SendCommand("load ap",">", bufBody, BODY_BUFFER_SIZE);
       delay(1000);
-      WiFly.SendCommand("save",">", bufBody, BODY_BUFFER_SIZE);
+      WiFly.SendCommand("save",">", bufBody, BODY_BUFFER_SIZE); 
       delay(1000);
       WiFly.SendCommand("reboot","Ver", bufBody, BODY_BUFFER_SIZE);
       delay(3000);
