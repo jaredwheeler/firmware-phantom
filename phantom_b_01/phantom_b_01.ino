@@ -560,43 +560,24 @@ void pourEnd()
   WiFly.flush();
   delay(100);
   
-  //boolean suc;
   //Open socket to host stored in RNXV on port 80
-  //suc = WiFly.SendCommand("open 173.201.58.131 80","OPEN", bufBody, BODY_BUFFER_SIZE);
-  //WiFly.SendCommand("open","OPEN", bufBody, BODY_BUFFER_SIZE);
-  //suc = WiFly.openConnection("192.168.1.124", 5000);
-  //conx_suc = WiFly.openConnection("173.201.58.131", 80);
-  conx_suc = WiFly.openConnection("192.168.11.3", 80);
-  delay(1000);
-  
-  
-  //digitalWrite(STATUS_LED, HIGH);
-  //delay(100);
-  //digitalWrite(STATUS_LED, LOW);
-  
+  conx_suc = WiFly.openConnection("173.201.58.131", 5000);
+  //conx_suc = WiFly.openConnection("192.168.11.3", 80);
+  delay(100);
   //WiFly.exitCommandMode();
   //delay(100);
-  Serial.println(conx_suc);
-  /*
-  if(conx_suc == true)
-  {
-    Serial.println("Open succeeded");
-  }
-  else
-  {
-    Serial.println("Open failed");
-  }
+  //Serial.println(conx_suc);
   
   //Make and send HTTP Request to log pour
   //WiFly.write("GET /taphandled/p.php HTTP/1.0\n\n");
   WiFly.write(reqBuf);
   delay(100);
   
-  //suc = WiFly.SendCommandSimple("close","CLOS");
-  WiFly.closeConnection(true);
+  analogWrite(STATUS_LED, 50);
   delay(100);
-  */
-  
+  digitalWrite(STATUS_LED, LOW);
+  //suc = WiFly.SendCommandSimple("close","CLOS");
+  //WiFly.closeConnection(true);
   runState = RUN_STATE_RUN;
   delay(10);
 }
@@ -667,7 +648,7 @@ void handleCONF()
   delay(100);
   WiFly.SendCommand(hostBuf,">", bufBody, BODY_BUFFER_SIZE);
   delay(100);
-  WiFly.SendCommand("set ip dhcp 0",">", bufBody, BODY_BUFFER_SIZE);
+  WiFly.SendCommand("set ip dhcp 1",">", bufBody, BODY_BUFFER_SIZE);
   delay(100);
   WiFly.SendCommand("set wlan join 0",">", bufBody, BODY_BUFFER_SIZE);
   delay(100);
@@ -675,11 +656,8 @@ void handleCONF()
   delay(100);
   WiFly.SendCommand("set wlan channel 0",">", bufBody, BODY_BUFFER_SIZE);
   delay(100);
-  
-  WiFly.SendCommand("set ip proto 18",">", bufBody, BODY_BUFFER_SIZE);
-  delay(100);
-  
-  WiFly.SendCommand("set dns name www.happyfight.com",">", bufBody, BODY_BUFFER_SIZE);
+  /*
+  WiFly.SendCommand("set ip proto 2",">", bufBody, BODY_BUFFER_SIZE);
   delay(100);
   
   WiFly.SendCommand("set ip address 0",">", bufBody, BODY_BUFFER_SIZE);
@@ -688,7 +666,7 @@ void handleCONF()
   delay(100);
   WiFly.SendCommand("set com remote 0",">", bufBody, BODY_BUFFER_SIZE);
   delay(100);
-  
+  */
   WiFly.SendCommand("save ap",">", bufBody, BODY_BUFFER_SIZE);
   delay(1000);
   
